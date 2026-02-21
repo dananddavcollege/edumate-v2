@@ -5,7 +5,12 @@ export class GeminiService {
   private ai: GoogleGenAI;
 
   private constructor() {
-    this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // We use import.meta.env for Vercel/Vite compatibility
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error("API Key missing! Add VITE_GEMINI_API_KEY to Vercel Environment Variables.");
+    }
+    this.ai = new GoogleGenAI({ apiKey: apiKey || "" });
   }
 
   public static getInstance(): GeminiService {
@@ -36,7 +41,7 @@ export class GeminiService {
     try {
       const response = await this.ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Generate a comprehensive study note/summary for the topic: "${topic}". Use markdown headers, bullet points, and highlight key terms. Make it look professional for a student's notebook.`,
+        contents: `Generate a comprehensive study note/summary for the topic: "${topic}". Use markdown headers, bullet points, and highlight key terms.`,
         config: {
           systemInstruction: "You are an expert educator. Create structured, clear, and high-quality educational notes.",
         }
@@ -61,11 +66,8 @@ export class GeminiService {
               type: Type.OBJECT,
               properties: {
                 question: { type: Type.STRING },
-                options: { 
-                  type: Type.ARRAY,
-                  items: { type: Type.STRING }
-                },
-                correctAnswer: { type: Type.INTEGER, description: "Index of the correct option (0-3)" },
+                options: { type: Type.ARRAY, items: { type: Type.STRING } },
+                correctAnswer: { type: Type.INTEGER },
                 explanation: { type: Type.STRING }
               },
               required: ["question", "options", "correctAnswer", "explanation"]
